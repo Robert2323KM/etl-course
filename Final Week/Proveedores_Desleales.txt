@@ -1,0 +1,27 @@
+SELECT 
+	YEAR(Fecha) AS Annio,
+    IdProveedor_DWH, 
+    Tipo_Beneficio,
+    MAX(ValorCopago) AS MaxCopago,
+    MIN(ValorCopago) AS MinCopago,
+    MAX(ValorCoseguro) AS MaxCoseguro,
+    MIN(ValorCoseguro) AS MinCoseguro,
+    Descripcion_Copago,
+    Descripcion_Coseguro, 
+    COALESCE((MAX(ValorCopago) - MIN(ValorCopago)) / NULLIF(MIN(ValorCopago), 0), 0) AS Var_Porc_Copag, 
+    COALESCE((MAX(ValorCoseguro) - MIN(ValorCoseguro)) / NULLIF(MIN(ValorCoseguro), 0), 0) AS Var_Porc_Coseg
+FROM 
+    Proyecto_G9_202315.Visualizacion
+WHERE 
+    Descripcion_Copago != 'No Charge' 
+    AND Descripcion_Coseguro != 'No Charge'
+GROUP BY 
+	YEAR(Fecha), 
+    IdProveedor_DWH, 
+    Tipo_Beneficio,
+    Descripcion_Copago,
+    Descripcion_Coseguro
+HAVING 
+    ((MaxCopago - MinCopago) / NULLIF(MinCopago, 0) > 0.2 
+    OR 
+    (MaxCoseguro - MinCoseguro) / NULLIF(MinCoseguro, 0) > 0.2);

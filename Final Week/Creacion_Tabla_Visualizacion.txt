@@ -1,0 +1,34 @@
+
+CREATE TABLE Proyecto_G9_202315.Visualizacion AS 
+SELECT Base.*, benef.Nombre AS Tipo_Beneficio FROM 
+(
+  SELECT
+    fechas.Fecha,
+    fechas.Dia,
+    fechas.Mes,
+    fechas.Annio,
+    ordenes.*, 
+    are.Nombre AS Area_Servicio, 
+    proveedores.IdProveedor_T AS Proveedor, 
+    condCop.Descripcion AS Descripcion_Copago,
+    COALESCE(condCop.Tipo, condCos.Tipo) AS Tipo_Pago,
+    condCos.Descripcion AS Descripcion_Coseguro 
+  FROM
+RaSaTransaccional_Tablero.HechoPlanesTiposBeneficio  AS ordenes
+LEFT JOIN RaSaTransaccional_Tablero.Fecha AS fechas ON fechas.IdFecha = ordenes.IdFechaEmision 
+LEFT JOIN RaSaTransaccional_Tablero.Proveedor AS proveedores ON proveedores.IdProveedor_DWH = ordenes.IdProveedor_DWH 
+LEFT JOIN RaSaTransaccional_Tablero.AreasDeServicio AS are ON ordenes.IdAreaDeServicio_DWH = are.IdAreaDeServicio_DWH 
+LEFT JOIN RaSaTransaccional_Tablero.CondicionesDePago AS condCop ON ordenes.IdCondicionesDePagoCopago_DWH = condCop.IdCondicionesDePago_DWH AND condCop.Tipo = 'Copago' 
+LEFT JOIN RaSaTransaccional_Tablero.CondicionesDePago AS condCos ON ordenes.IdCondicionesDePagoCoseguro_DWH = condCos.IdCondicionesDePago_DWH AND condCos.Tipo = 'Coseguro' 
+) AS Base 
+#LEFT JOIN (SELECT asoc.IdAreaDeServicio_DWH, geo.Estado, geo.Condado, geo.PoblacionAct, geo.DensidadAct FROM RaSaTransaccional_Tablero.AsociacionAreaServicioGeografia AS asoc 
+#	LEFT JOIN RaSaTransaccional_Tablero.Geografia AS geo ON asoc.IdGeografia_DWH = geo.IdGeografia_DWH
+#	LEFT JOIN RaSaTransaccional_Tablero.AreasDeServicio AS are ON asoc.IdAreaDeServicio_DWH = are.IdAreaDeServicio_DWH) 
+#    AS Geog ON ordenes.IdAreaDeServicio_DWH = Geog.IdAreaDeServicio_DWH) AS Base   
+LEFT JOIN ( 
+SELECT Base.IdTipoBeneficio_DWH, Base.IdCondicionesTipoBeneficios_DWH, fech.Annio AS Annio_inicio, SUBSTRING(IdFechaFin, 1, 4) AS Annio_fin, ben.Nombre 
+FROM RaSaTransaccional_Tablero.HechoHistCondicionesTiposBeneficio AS Base 
+LEFT JOIN RaSaTransaccional_Tablero.TiposBeneficio AS ben ON Base.IdTipoBeneficio_DWH = ben.IdTipoBeneficio_DWH 
+LEFT JOIN RaSaTransaccional_Tablero.MiniCondicionesTipoBeneficio AS mini ON Base.IdCondicionesTipoBeneficios_DWH = mini.IdCondicionesTipoBeneficios_DWH 
+LEFT JOIN RaSaTransaccional_Tablero.Fecha AS fech ON Base.IdFechaInicio = fech.IdFecha
+) AS benef ON Base.IdTipoBeneficio_DWH = benef.IdTipoBeneficio_DWH  AND Base.Annio >= benef.Annio_inicio AND Base.Annio <= benef.Annio_fin; 
